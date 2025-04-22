@@ -8,8 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginMessage = document.getElementById('loginMessage');
     const registerMessage = document.getElementById('registerMessage');
 
-    // URL base de la API (backend local de tu compañero)
-    const API_BASE_URL = 'http://localhost:8080/api';
+    // URL base de la API via Ngrok (la que te proporcionó tu compañero)
+    const API_BASE_URL = 'https://0683-190-24-56-13.ngrok-free.app/api';
+    
+    // Configuración común para fetch
+    const fetchConfig = {
+        headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true' // Para evitar advertencias de Ngrok
+        }
+    };
 
     // Toggle entre formularios
     registerBtn.addEventListener('click', () => {
@@ -36,10 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const response = await fetch(`${API_BASE_URL}/users`, {
+                ...fetchConfig,
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     name: username,
                     email: email,
@@ -87,10 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                ...fetchConfig,
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     email: email,
                     password: password
@@ -127,4 +131,25 @@ document.addEventListener('DOMContentLoaded', function() {
             element.className = 'message';
         }, 5000);
     }
+
+    // Función de prueba para verificar conexión con el backend
+    async function testBackendConnection() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/usuarios`, {
+                ...fetchConfig,
+                method: 'GET'
+            });
+            
+            if (response.ok) {
+                console.log('Conexión con el backend establecida correctamente');
+            } else {
+                console.warn('El backend respondió pero con errores');
+            }
+        } catch (error) {
+            console.error('Error conectando al backend:', error);
+        }
+    }
+    
+    // Ejecutar prueba de conexión al cargar la página
+    testBackendConnection();
 });
