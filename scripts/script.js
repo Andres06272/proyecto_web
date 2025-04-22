@@ -40,10 +40,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     recipient: email,
                     subject: '¡Bienvenido a Turismo Médico!',
                     body: `
-                        <h1>¡Gracias por registrarte, ${username}!</h1>
-                        <p>Tu cuenta en Turismo Médico ha sido creada exitosamente.</p>
-                        <p>Ahora puedes acceder a todos nuestros servicios médicos.</p>
-                        <p>Si no realizaste este registro, por favor contacta con soporte.</p>
+                        ¡Gracias por registrarte, ${username}!
+                        Tu cuenta en Turismo Médico ha sido creada exitosamente.
+                        Ahora puedes acceder a todos nuestros servicios médicos.
+                        Si no realizaste este registro, por favor contacta con soporte.
                     `
                 })
             });
