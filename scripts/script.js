@@ -30,6 +30,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
+    // Función para enviar correo de confirmación
+    async function sendConfirmationEmail(email, username) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/send-welcome-email`, {
+                ...fetchConfig,
+                method: 'POST',
+                body: JSON.stringify({
+                    recipient: email,
+                    subject: '¡Bienvenido a Turismo Médico!',
+                    body: `
+                        <h1>¡Gracias por registrarte, ${username}!</h1>
+                        <p>Tu cuenta en Turismo Médico ha sido creada exitosamente.</p>
+                        <p>Ahora puedes acceder a todos nuestros servicios médicos.</p>
+                        <p>Si no realizaste este registro, por favor contacta con soporte.</p>
+                    `
+                })
+            });
+            
+            if (!response.ok) {
+                console.warn('El correo no pudo enviarse, pero el registro fue exitoso');
+            }
+        } catch (error) {
+            console.error('Error enviando correo:', error);
+        }
+    }
+
     // Manejar el registro
     async function handleRegister(e) {
         e.preventDefault();
@@ -44,26 +70,40 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Validación de email
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showMessage(registerMessage, 'Por favor ingresa un email válido', 'error');
+            return;
+        }
+
         try {
-            const response = await fetch(`${API_BASE_URL}/users`, {
+            // 1. Registrar al usuario
+            const registerResponse = await fetch(`${API_BASE_URL}/users`, {
                 ...fetchConfig,
                 method: 'POST',
                 body: JSON.stringify({
                     name: username,
                     email: email,
                     password: password,
-                    roleEntity: { id: 2 } // 2 para usuario normal, 1 para admin
+                    roleEntity: { id: 2 } // 2 para usuario normal
                 })
             });
 
-            if (response.ok) {
-                showMessage(registerMessage, '¡Registro exitoso! Por favor inicia sesión.', 'success');
+            if (registerResponse.ok) {
+                // 2. Enviar correo de confirmación (en segundo plano)
+                sendConfirmationEmail(email, username);
+                
+                // 3. Mostrar mensaje al usuario
+                showMessage(registerMessage, '¡Registro exitoso! Revisa tu correo para la confirmación.', 'success');
+                
+                // 4. Cambiar a vista de login después de 3 segundos
                 setTimeout(() => {
                     container.classList.remove('active');
                     registerForm.reset();
-                }, 2000);
-            } else if (response.status === 409) {
-                showMessage(registerMessage, 'El correo electrónico ya está registrado', 'error');
+                }, 3000);
+                
+            } else if (registerResponse.status === 409) {
+                showMessage(registerMessage, 'Este correo ya está registrado', 'error');
             } else {
                 showMessage(registerMessage, 'Error en el registro. Intenta nuevamente.', 'error');
             }
@@ -73,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Manejar el login (adaptado a la API de tu compañero)
+    // Manejar el login
     async function handleLogin(e) {
         e.preventDefault();
         
@@ -90,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
 
-            // Manejo específico de códigos de estado
             if (response.status === 200) {
                 const data = await response.json();
                 
@@ -98,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error('El servidor no devolvió un token válido');
                 }
                 
-                // Guardar token y redirigir
                 localStorage.setItem('authToken', data.token);
                 window.location.href = 'home.html';
                 
@@ -122,23 +160,4 @@ document.addEventListener('DOMContentLoaded', function() {
     loginBtn.addEventListener('click', () => container.classList.remove('active'));
     registerForm.addEventListener('submit', handleRegister);
     loginForm.addEventListener('submit', handleLogin);
-
-    // Función de diagnóstico (opcional)
-    async function checkBackendConnection() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users`, {
-                ...fetchConfig,
-                method: 'GET'
-            });
-            
-            if (!response.ok) {
-                console.warn('El backend respondió con estado:', response.status);
-            }
-        } catch (error) {
-            console.error('Error conectando al backend:', error);
-        }
-    }
-    
-    // Verificar conexión al cargar (opcional)
-    checkBackendConnection();
 });
