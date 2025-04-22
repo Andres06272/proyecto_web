@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Guardar token y redirigir
                 localStorage.setItem('authToken', data.token);
-                window.location.href = 'dashboard.html';
+                window.location.href = 'home.html';
                 
             } else if (response.status === 401) {
                 showMessage(loginMessage, 'Contraseña incorrecta', 'error');
