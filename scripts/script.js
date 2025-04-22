@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Configuración de la API
-    const API_BASE_URL = 'https://0683-190-24-56-13.ngrok-free.app/api';
+    const API_BASE_URL = 'https://4ce8-200-115-181-2.ngrok-free.app/api';
     
     // Elementos del DOM
     const container = document.querySelector('.container');
