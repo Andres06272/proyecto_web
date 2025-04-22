@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Configuración de la API con la URL que te envió tu compañero
-    const API_BASE_URL = 'https://0683-190-24-56-13.ngrok-free.app/api/auth/';
+    const API_BASE_URL = 'https://0683-190-24-56-13.ngrok-free.app/api';
     
     // Configuración optimizada para CORS
     const fetchConfig = {
