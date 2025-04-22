@@ -1,15 +1,3 @@
-const container = document.querySelector('.container')
-const registerBtn = document.querySelector('.register-btn')
-const loginBtn = document.querySelector('.login-btn')
-
-registerBtn.addEventListener('click', () => {
-    container.classList.add('active');
-})
-
-loginBtn.addEventListener('click', () => {
-    container.classList.remove('active');
-})
-
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM
     const container = document.querySelector('.container');
@@ -20,8 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginMessage = document.getElementById('loginMessage');
     const registerMessage = document.getElementById('registerMessage');
 
-    // URL base de la API (ajustar según sea necesario)
-    const API_BASE_URL = 'http://tu-backend.com/api';
+    // URL base de la API (backend local de tu compañero)
+    const API_BASE_URL = 'http://localhost:8080/api';
 
     // Toggle entre formularios
     registerBtn.addEventListener('click', () => {
@@ -53,9 +41,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    nombre: username,
-                    correo: email,
-                    contraseña: password
+                    name: username,
+                    email: email,
+                    password: password,
+                    roleEntity: {
+                        id: 1 // ID del rol por defecto (1 para usuarios normales)
+                    }
                 })
             });
 
@@ -67,14 +58,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     registerForm.reset();
                     registerMessage.textContent = '';
                 }, 2000);
-            } else if (response.status === 409) {
-                showMessage(registerMessage, 'El correo electrónico ya está registrado.', 'error');
             } else {
-                showMessage(registerMessage, 'Error en el registro. Por favor intenta nuevamente.', 'error');
+                const errorData = await response.json();
+                if (response.status === 409) {
+                    showMessage(registerMessage, errorData.message || 'El correo electrónico ya está registrado.', 'error');
+                } else {
+                    showMessage(registerMessage, errorData.message || 'Error en el registro. Por favor intenta nuevamente.', 'error');
+                }
             }
         } catch (error) {
             console.error('Error:', error);
-            showMessage(registerMessage, 'Error de conexión. Por favor intenta nuevamente.', 'error');
+            showMessage(registerMessage, 'Error de conexión con el servidor. Por favor intenta nuevamente.', 'error');
         }
     });
 
@@ -99,26 +93,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     email: email,
-                    contraseña: password
+                    password: password
                 })
             });
 
+            const data = await response.json();
+
             if (response.ok) {
-                const data = await response.json();
                 // Guardar el token en localStorage
                 localStorage.setItem('authToken', data.token);
                 // Redirigir al dashboard
                 window.location.href = 'dashboard.html';
             } else if (response.status === 401) {
-                showMessage(loginMessage, 'Contraseña incorrecta.', 'error');
+                showMessage(loginMessage, data.message || 'Credenciales incorrectas', 'error');
             } else if (response.status === 404) {
-                showMessage(loginMessage, 'Usuario no encontrado.', 'error');
+                showMessage(loginMessage, data.message || 'Usuario no encontrado', 'error');
             } else {
-                showMessage(loginMessage, 'Error en el inicio de sesión. Por favor intenta nuevamente.', 'error');
+                showMessage(loginMessage, data.message || 'Error en el inicio de sesión', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showMessage(loginMessage, 'Error de conexión. Por favor intenta nuevamente.', 'error');
+            showMessage(loginMessage, 'Error de conexión con el servidor', 'error');
         }
     });
 
@@ -126,5 +121,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function showMessage(element, message, type) {
         element.textContent = message;
         element.className = 'message ' + type;
+        // Limpiar mensaje después de 5 segundos
+        setTimeout(() => {
+            element.textContent = '';
+            element.className = 'message';
+        }, 5000);
     }
 });
