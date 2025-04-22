@@ -1,42 +1,53 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Elementos del DOM
-    const container = document.querySelector('.container');
-    const registerBtn = document.querySelector('.register-btn');
-    const loginBtn = document.querySelector('.login-btn');
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const loginMessage = document.getElementById('loginMessage');
-    const registerMessage = document.getElementById('registerMessage');
-
-    // URL base de la API via Ngrok (la que te proporcionó tu compañero)
+    // Configuración de la API con la URL que te envió tu compañero
     const API_BASE_URL = 'https://0683-190-24-56-13.ngrok-free.app/api';
     
-    // Configuración común para fetch
+    // Configuración optimizada para CORS
     const fetchConfig = {
+        mode: 'cors',
         headers: {
             'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true' // Para evitar advertencias de Ngrok
+            'Accept': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
         }
     };
 
-    // Toggle entre formularios
-    registerBtn.addEventListener('click', () => {
-        container.classList.add('active');
-    });
+    // Función para mostrar mensajes
+    function showMessage(element, message, type) {
+        element.textContent = message;
+        element.className = 'message ' + type;
+        setTimeout(() => element.textContent = '', 5000);
+    }
 
-    loginBtn.addEventListener('click', () => {
-        container.classList.remove('active');
-    });
+    // Verificar conexión con el backend
+    async function checkBackendConnection() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/users`, {
+                ...fetchConfig,
+                method: 'GET'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return true;
+        } catch (error) {
+            console.error('Error verificando conexión:', error);
+            showMessage(document.getElementById('loginMessage'), 'Error conectando al servidor', 'error');
+            showMessage(document.getElementById('registerMessage'), 'Error conectando al servidor', 'error');
+            return false;
+        }
+    }
 
     // Manejar el registro
-    registerForm.addEventListener('submit', async (e) => {
+    async function handleRegister(e) {
         e.preventDefault();
         
         const username = document.getElementById('registerUsername').value;
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
+        const registerMessage = document.getElementById('registerMessage');
 
-        // Validación básica
         if (!username || !email || !password) {
             showMessage(registerMessage, 'Por favor completa todos los campos', 'error');
             return;
@@ -50,46 +61,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     name: username,
                     email: email,
                     password: password,
-                    roleEntity: {
-                        id: 1 // ID del rol por defecto (1 para usuarios normales)
-                    }
+                    roleEntity: { id: 2 } // ID 2 para usuarios normales (1 para admin)
                 })
             });
 
+            const data = await response.json();
+
             if (response.ok) {
                 showMessage(registerMessage, '¡Registro exitoso! Por favor inicia sesión.', 'success');
-                // Cambiar al formulario de login después de 2 segundos
                 setTimeout(() => {
                     container.classList.remove('active');
                     registerForm.reset();
-                    registerMessage.textContent = '';
                 }, 2000);
             } else {
-                const errorData = await response.json();
-                if (response.status === 409) {
-                    showMessage(registerMessage, errorData.message || 'El correo electrónico ya está registrado.', 'error');
-                } else {
-                    showMessage(registerMessage, errorData.message || 'Error en el registro. Por favor intenta nuevamente.', 'error');
-                }
+                showMessage(registerMessage, data.message || 'Error en el registro', 'error');
             }
         } catch (error) {
-            console.error('Error:', error);
-            showMessage(registerMessage, 'Error de conexión con el servidor. Por favor intenta nuevamente.', 'error');
+            console.error('Error en registro:', error);
+            showMessage(registerMessage, 'Error de conexión con el servidor', 'error');
         }
-    });
+    }
 
     // Manejar el login
-    loginForm.addEventListener('submit', async (e) => {
+    async function handleLogin(e) {
         e.preventDefault();
         
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
-
-        // Validación básica
-        if (!email || !password) {
-            showMessage(loginMessage, 'Por favor completa todos los campos', 'error');
-            return;
-        }
+        const loginMessage = document.getElementById('loginMessage');
 
         try {
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -104,52 +103,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                // Guardar el token en localStorage
                 localStorage.setItem('authToken', data.token);
-                // Redirigir al dashboard
                 window.location.href = 'dashboard.html';
-            } else if (response.status === 401) {
-                showMessage(loginMessage, data.message || 'Credenciales incorrectas', 'error');
-            } else if (response.status === 404) {
-                showMessage(loginMessage, data.message || 'Usuario no encontrado', 'error');
             } else {
-                showMessage(loginMessage, data.message || 'Error en el inicio de sesión', 'error');
+                showMessage(loginMessage, data.message || 'Credenciales incorrectas', 'error');
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error en login:', error);
             showMessage(loginMessage, 'Error de conexión con el servidor', 'error');
         }
-    });
-
-    // Función para mostrar mensajes
-    function showMessage(element, message, type) {
-        element.textContent = message;
-        element.className = 'message ' + type;
-        // Limpiar mensaje después de 5 segundos
-        setTimeout(() => {
-            element.textContent = '';
-            element.className = 'message';
-        }, 5000);
     }
 
-    // Función de prueba para verificar conexión con el backend
-    async function testBackendConnection() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/usuarios`, {
-                ...fetchConfig,
-                method: 'GET'
-            });
-            
-            if (response.ok) {
-                console.log('Conexión con el backend establecida correctamente');
-            } else {
-                console.warn('El backend respondió pero con errores');
-            }
-        } catch (error) {
-            console.error('Error conectando al backend:', error);
-        }
-    }
-    
-    // Ejecutar prueba de conexión al cargar la página
-    testBackendConnection();
+    // Inicialización
+    const container = document.querySelector('.container');
+    const registerBtn = document.querySelector('.register-btn');
+    const loginBtn = document.querySelector('.login-btn');
+    const registerForm = document.getElementById('registerForm');
+    const loginForm = document.getElementById('loginForm');
+
+    registerBtn.addEventListener('click', () => container.classList.add('active'));
+    loginBtn.addEventListener('click', () => container.classList.remove('active'));
+    registerForm.addEventListener('submit', handleRegister);
+    loginForm.addEventListener('submit', handleLogin);
+
+    // Verificar conexión al cargar
+    checkBackendConnection();
 });
